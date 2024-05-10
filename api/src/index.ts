@@ -59,7 +59,7 @@ async function convertPdfToLangChainDocuments(
 async function generateNotes(documents: Array<Document>): Promise<Array<ArxivPaperNote>> {
   const documentsAsString = formatDocumentsAsString(documents); //maps each doc and joins at new line and returns a string because LLMS only take strings and not doc objects
   const model = new ChatOpenAI({
-    modelName: "gpt-3.5-turbo", //gpt-4-1106-preview
+    modelName: "gpt-4-1106-preview",//"gpt-3.5-turbo", //gpt-4-1106-preview
     temperature: 0.0, //0.0 is deterministic (only looks at pdfs, no creativity)
     openAIApiKey: process.env.OPENAI_API_KEY,
   }); 
