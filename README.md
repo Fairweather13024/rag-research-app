@@ -2,6 +2,11 @@
 
 ## Development
 
+run this before running the api server
+```bash
+docker run -p 8000:8000 -d --rm --name unstructured-api quay.io/unstructured-io/unstructured-api:latest --port 8000 --host 0.0.0.0
+```
+
 This monorepo uses Turborepo to manage the two packages (web, api).
 To build all packages run `yarn build` from root.
 
