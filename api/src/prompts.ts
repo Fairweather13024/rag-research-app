@@ -1,4 +1,5 @@
 import { ChatPromptTemplate } from 'langchain/prompts';
+import { BaseMessageChunk } from 'langchain/schema';
 import type {OpenAI as OpenAIClient} from 'openai';
 
 export const NOTES_TOOL_SCHEMA : OpenAIClient.ChatCompletionTool = {
@@ -50,7 +51,25 @@ export const NOTE_PROMPT = ChatPromptTemplate.fromMessages([
 
         Respond with a JSON array with two keys: "note" and "pageNumbers". The "note" key should contain the note content and the "pageNumbers" 
         key should contain an array of page numbers that the note is from (if the note spans more than one page).
+
+        Go through this work meticulously step by step and include as much detail as possible.
         `
     ],
     ['human', 'Paper: {paper}'],
 ]);
+
+export type ArxivPaperNote = {
+    note: string;
+    pageNumbers: number[];
+}
+export const outPutParser = (output: BaseMessageChunk) => {
+    const toolCalls = output.additional_kwargs.tool_calls;
+    if (!toolCalls || toolCalls.length === 0) {
+       throw new Error('No tool calls found in output');
+    }
+    const notes: Array<ArxivPaperNote> = toolCalls.map((call) => {
+        const {notes} = JSON.parse(call.function.arguments)
+        return notes;
+    }).flat();
+    return notes
+}
