@@ -76,7 +76,6 @@ async function generateNotes(documents: Array<Document>): Promise<Array<ArxivPap
 
 async function main({
   paperUrl,
-  name,
   pagesToDelete,
 }: {
   paperUrl: string;
