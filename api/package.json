@@ -23,7 +23,6 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.38.4",
     "axios": "^1.6.1",
-    "dotenv": "^16.4.5",
     "express": "^4.18.2",
     "langchain": "^0.0.202",
     "pdf-lib": "^1.17.1",
