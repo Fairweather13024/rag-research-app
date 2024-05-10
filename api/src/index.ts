@@ -12,6 +12,7 @@ import {
   outPutParser,
   ArxivPaperNote,
 } from "prompts.js";
+import { Supabasedatabase } from "database.js";
 
 dotenv.config();
 
@@ -52,7 +53,7 @@ async function convertPdfToLangChainDocuments(
   });
 
   const documents = await loader.load();
-  await unlink(`pdfs/${randomName}.pdf`); // basically deleting the file after processing
+  //await unlink(`pdfs/${randomName}.pdf`); // basically deleting the file after processing
   return documents;
 }
 
@@ -76,6 +77,7 @@ async function generateNotes(documents: Array<Document>): Promise<Array<ArxivPap
 
 async function main({
   paperUrl,
+  name,
   pagesToDelete,
 }: {
   paperUrl: string;
@@ -97,6 +99,13 @@ async function main({
   const notes = await generateNotes(documents);
   console.log(notes);
   console.log(notes.length);
+  const database = await Supabasedatabase.fromDocuments(documents);
+  await database.addPaper({
+    paperUrl,
+    name,
+    paper: formatDocumentsAsString(documents),
+    notes,
+  });
 }
 
 
