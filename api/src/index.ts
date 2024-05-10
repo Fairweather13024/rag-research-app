@@ -6,7 +6,12 @@ import { UnstructuredLoader } from "langchain/document_loaders/fs/unstructured";
 import { formatDocumentsAsString } from "langchain/util/document";
 import dotenv from "dotenv";
 import { ChatOpenAI } from "langchain/chat_models/openai";
-import { NOTES_TOOL_SCHEMA, NOTE_PROMPT } from "prompts.js";
+import {
+  NOTES_TOOL_SCHEMA,
+  NOTE_PROMPT,
+  outPutParser,
+  ArxivPaperNote,
+} from "prompts.js";
 
 dotenv.config();
 
@@ -51,20 +56,22 @@ async function convertPdfToLangChainDocuments(
   return documents;
 }
 
-async function generateNotes(documents: Array<Document>) {
+async function generateNotes(documents: Array<Document>): Promise<Array<ArxivPaperNote>> {
   const documentsAsString = formatDocumentsAsString(documents); //maps each doc and joins at new line and returns a string because LLMS only take strings and not doc objects
   const model = new ChatOpenAI({
     modelName: "gpt-3.5-turbo", //gpt-4-1106-preview
     temperature: 0.0, //0.0 is deterministic (only looks at pdfs, no creativity)
+    openAIApiKey: process.env.OPENAI_API_KEY,
   }); 
   const modelWithTool = model.bind({
     tools: [NOTES_TOOL_SCHEMA] //bind langchain tools with model specs
   })
 
-  const chain = NOTE_PROMPT.pipe(modelWithTool); //pipe the prompt to the model
+  const chain = NOTE_PROMPT.pipe(modelWithTool).pipe(outPutParser); //pipe the prompt to the model
     const response = await chain.invoke({
-        
+        paper : documentsAsString
     });
+    return response;
 }
 
 async function main({
@@ -88,12 +95,14 @@ async function main({
 
   const documents = await convertPdfToLangChainDocuments(pdfAsBuffer);
   console.log(documents);
-  console.log(documents.length);
+  const notes = await generateNotes(documents);
+  console.log(notes);
+  console.log(notes.length);
 }
 
 
 main({
   paperUrl: "https://arxiv.org/pdf/2311.05556.pdf",
   name: "test",
-  pagesToDelete: [6,7],
+  pagesToDelete: [],
 });
