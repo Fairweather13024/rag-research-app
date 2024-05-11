@@ -104,7 +104,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex gap-5">
+    <div className="flex flex-col gap-5">
       <div className="flex flex-row gap-5 mx-auto mt-3">
         {/** Add paper */}
         <div className="flex flex-col gap-2 border-[1px] border-gray-400 rounded-md p-2">
