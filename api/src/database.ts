@@ -3,11 +3,13 @@ import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { SupabaseVectorStore } from "langchain/vectorstores/supabase";
 import {
   Database,
-  ARXIV_EMBEDDINGS_TABLE,
-  ARXIV_PAPERS_TABLE,
 } from "./generated/db.js";
 import { Document } from "langchain/document";
-import { ArxivPaperNote } from "prompts.js";
+import { ArxivPaperNote } from "notes/prompts.js";
+
+export const ARXIV_PAPERS_TABLE = "arxiv_papers";
+export const ARXIV_EMBEDDINGS_TABLE = "arxiv_embeddings";
+export const ARXIV_QA_TABLE = "arxiv_question_answering";
 
 export class Supabasedatabase {
   vectorStore: SupabaseVectorStore;
@@ -19,7 +21,26 @@ export class Supabasedatabase {
     this.vectorStore = vectorStore;
     this.client = client;
   }
+  static async fromExistingIndex(): Promise<Supabasedatabase> {
+    const privateKey = process.env.SUPABASE_PRIVATE_KEY;
+    if (!privateKey) throw new Error(`Missing SUPABASE_PRIVATE_KEY`);
 
+    const url = process.env.SUPABASE_PROJECT_URL;
+    if (!url) throw new Error(`Missing SUPABASE_URL`);
+
+    const client = createClient<Database>(url, privateKey);
+
+    const vectorStore = await SupabaseVectorStore.fromExistingIndex(
+      new OpenAIEmbeddings(),
+      {
+        client,
+        tableName: ARXIV_EMBEDDINGS_TABLE,
+        queryName: "match_documents",
+      }
+    );
+
+    return new this(vectorStore, client);
+  }
   static async fromDocuments(
     documents: Array<Document>
   ): Promise<Supabasedatabase> {
@@ -65,5 +86,38 @@ export class Supabasedatabase {
     }
     console.log(data);
     return data;
+  }
+
+  async getPaper(
+    url: string
+  ): Promise<Database["public"]["Tables"]["arxiv_papers"]["Row"] | null> {
+    const { data, error } = await this.client
+      .from(ARXIV_PAPERS_TABLE)
+      .select()
+      .eq("arxiv_url", url);
+
+    if (error || !data) {
+      console.error("Error getting paper from database");
+      return null;
+    }
+    return data[0];
+  }
+
+  async saveQa(
+    question: string,
+    answer: string,
+    context: string,
+    followupQuestions: string[]
+  ) {
+    const { error } = await this.client.from(ARXIV_QA_TABLE).insert({
+      question,
+      answer,
+      context,
+      followup_questions: followupQuestions,
+    });
+    if (error) {
+      console.error("Error saving QA to database");
+      throw error;
+    }
   }
 }
