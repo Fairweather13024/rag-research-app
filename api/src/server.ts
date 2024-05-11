@@ -1,5 +1,5 @@
 import express from "express";
-// import { takeNotes } from "notes/index.js";
+import { takeNotes } from "index.js";
 // import { qaOnPaper } from "qa/index.js";
 
 function processPagesToDelete(pagesToDelete: string): Array<number> {
@@ -18,16 +18,18 @@ function main() {
     res.status(200).send("ok");
   });
 
-//   app.post("/take_notes", async (req, res) => {
-//     const { paperUrl, name, pagesToDelete } = req.body;
-//     // convert pagesToDelete back to array numbers
-//     const pagesToDeleteArray = pagesToDelete
-//       ? processPagesToDelete(pagesToDelete)
-//       : undefined;
-//     const notes = await takeNotes(paperUrl, name, pagesToDeleteArray);
-//     res.status(200).send(notes);
-//     return;
-//   });
+  app.post("/take-notes", async (req, res) => {
+    const { paperUrl, name, pagesToDelete } = req.body;
+
+            // convert pagesToDelete back to array numbers
+    // const pagesToDeleteArray = pagesToDelete
+    //   ? processPagesToDelete(pagesToDelete)
+    //   : undefined;
+    const notes = await takeNotes(paperUrl, name, pagesToDelete);
+    res.status(200).send(notes);
+    return;
+
+  });
 
 //   app.post("/qa", async (req, res) => {
 //     const { paperUrl, question } = req.body;
