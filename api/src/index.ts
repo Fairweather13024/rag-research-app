@@ -13,9 +13,9 @@ import {
   ArxivPaperNote,
 } from "prompts.js";
 import { Supabasedatabase } from "database.js";
+import fs from "fs/promises";
 
 dotenv.config();
-
 
 async function deletePages(
   pdf: Buffer,
@@ -57,36 +57,56 @@ async function convertPdfToLangChainDocuments(
   return documents;
 }
 
-async function generateNotes(documents: Array<Document>): Promise<Array<ArxivPaperNote>> {
+async function generateNotes(
+  documents: Array<Document>
+): Promise<Array<ArxivPaperNote>> {
   const documentsAsString = formatDocumentsAsString(documents); //maps each doc and joins at new line and returns a string because LLMS only take strings and not doc objects
   const model = new ChatOpenAI({
-    modelName: "gpt-4-1106-preview",//"gpt-3.5-turbo", //gpt-4-1106-preview
+    modelName: "gpt-4-1106-preview", //"gpt-3.5-turbo", //gpt-4-1106-preview
     temperature: 0.0, //0.0 is deterministic (only looks at pdfs, no creativity)
     openAIApiKey: process.env.OPENAI_API_KEY,
-  }); 
+  });
   const modelWithTool = model.bind({
-    tools: [NOTES_TOOL_SCHEMA] //bind langchain tools with model specs
-  })
+    tools: [NOTES_TOOL_SCHEMA], //bind langchain tools with model specs
+  });
 
   const chain = NOTE_PROMPT.pipe(modelWithTool).pipe(outPutParser); //pipe the prompt to the model
-    const response = await chain.invoke({
-        paper : documentsAsString
-    });
-    return response;
+  const response = await chain.invoke({
+    paper: documentsAsString,
+  });
+  return response;
 }
 
-async function main({
-  paperUrl,
-  name,
-  pagesToDelete,
-}: {
-  paperUrl: string;
-  name: string;
-  pagesToDelete?: number[];
-}) {
+export async function takeNotes(
+  paperUrl: string,
+  name: string,
+  pagesToDelete?: number[],
+) {
+   console.log(paperUrl, name, pagesToDelete);
   if (!paperUrl.endsWith(".pdf")) {
     throw new Error("Not a pdf file");
   }
+  // //if the passed paper url exists in pdfs/docs.json array of strings then we dont need to process it again
+  // const docsFilePath = "pdfs/docs.json";
+
+  // const docsFileExists = await fs
+  //   .access(docsFilePath)
+  //   .then(() => true)
+  //   .catch(() => false);
+
+  // let names: string[] = [];
+
+  // if (docsFileExists) {
+  //   const docsFileContent = await fs.readFile(docsFilePath, "utf-8");
+  //   names = JSON.parse(docsFileContent);
+  // }
+
+  // if (names.includes(paperUrl)) {
+  //   console.log("Paper URL already exists in docs.json. Skipping processing.");
+  //   return;
+  // }
+
+  // Continue with processing the paper URL
   let pdfAsBuffer = await loadPdfFromUrl(paperUrl);
 
   if (pagesToDelete && pagesToDelete.length > 0) {
@@ -100,17 +120,20 @@ async function main({
   console.log(notes);
   console.log(notes.length);
   const database = await Supabasedatabase.fromDocuments(documents);
-  await database.addPaper({
-    paperUrl,
-    name,
-    paper: formatDocumentsAsString(documents),
-    notes,
-  });
+  await Promise.all([
+    database.addPaper({
+      paperUrl,
+      name,
+      paper: formatDocumentsAsString(documents),
+      notes,
+    }),
+    database.vectorStore.addDocuments(documents),
+  ]);
+  return notes;
 }
 
-
-main({
-  paperUrl: "https://arxiv.org/pdf/2311.05556.pdf",
-  name: "test",
-  pagesToDelete: [],
-});
+// takeNotes({
+//   paperUrl: "https://arxiv.org/pdf/2311.05556.pdf",
+//   name: "test",
+//   pagesToDelete: [],
+// });
