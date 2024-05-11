@@ -1,7 +1,8 @@
 # GPT-4 RAG Demo on Scientific Papers, Notetaking, Q&A, Unstructured semantic extraction, Vectorization, and search with Persistent Chat Context Database
 
 ## Demo
-![alt text](image-1.png)
+![alt text](image.png)
+![alt text](image-2.png)
 
 ## RAG (Retrieval-Augmented Generation) App for Scientific Papers
 
