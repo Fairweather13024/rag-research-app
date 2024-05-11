@@ -1,6 +1,6 @@
 import express from "express";
-import { takeNotes } from "index.js";
-// import { qaOnPaper } from "qa/index.js";
+import { takeNotes } from "notes/index.js";
+import { qaOnPaper } from "qa/index.js";
 
 function processPagesToDelete(pagesToDelete: string): Array<number> {
   const numArr = pagesToDelete.split(",").map((num) => parseInt(num.trim()));
@@ -31,12 +31,12 @@ function main() {
 
   });
 
-//   app.post("/qa", async (req, res) => {
-//     const { paperUrl, question } = req.body;
-//     const qa = await qaOnPaper(question, paperUrl);
-//     res.status(200).send(qa);
-//     return;
-//   });
+  app.post("/qa", async (req, res) => {
+    const { paperUrl, question } = req.body;
+    const qa = await qaOnPaper(question, paperUrl);
+    res.status(200).send(qa);
+    return;
+  });
 
   app.listen(port, () => {
     console.log(`Listening on port ${port}`);
